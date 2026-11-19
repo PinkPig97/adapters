@@ -105,7 +105,7 @@ def _find_atif_final_text(value: Any) -> str:
         if not isinstance(step, dict) or step.get("source") != "agent":
             continue
         message = step.get("message")
-        if isinstance(message, str) and message.strip():
+        if isinstance(message, str) and message.strip() and not message.lstrip().startswith("Executed "):
             return message.strip()
     return ""
 
