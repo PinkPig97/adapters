@@ -115,6 +115,7 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 - Oracle and agents without a usable trajectory should write the final response to `/logs/agent/final_response.txt`. Installed agents that emit ATIF trajectories are graded from their final agent message.
 - The public source has no released AbstainGen generator. This adapter uses the released task and environment snapshot.
 - A Codex `gpt-6.2-astra` smoke on the pinned act pair timed out while searching for opaque record IDs that are not enumerable through that task's public tools. This is recorded as an agent-discoverability signal and is not used as a parity score.
+- The Harbor verifier cannot read Harbor's host-side `run_error_kind`, so infrastructure-error filtering is not identical to the upstream evaluator. Formal parity must account for this when comparing agent failures.
 
 ## Installation / Prerequisites
 
