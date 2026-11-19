@@ -10,8 +10,8 @@
     "notes": "Formal original-to-Harbor parity has not been run. The parity subset is a deterministic 47-pair sample covering all 42 environments. Current evidence covers full generation, runtime imports, sidecar Docker builds, Oracle smoke, and a 10-task Oracle sanity slice. The offline judge stub is excluded from parity claims.",
     "original_parity_repo": "https://github.com/AntiQuality/agentabstain",
     "adapter_pr": ["https://github.com/harbor-index/adapters/pull/23"],
-    "dataset_pr": [],
-    "parity_pr": [],
+    "dataset_pr": null,
+    "parity_pr": null,
     "metrics": [
       {
         "benchmark_name": "AgentAbstain",
