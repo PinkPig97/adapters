@@ -112,7 +112,7 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 
 - The sidecar prevents the agent from reading or modifying initial state, task metadata, critical actions, or the runtime process. The agent can read the execution log because tool results are part of the observable trajectory.
 - Native `critical_actions` is the grading source of truth. The adapter does not recompute it from the DAG or tool schema.
-- A task’s final response must be written to `/logs/agent/final_response.txt`. Installed agents that do not follow this instruction need a trajectory parser or a custom wrapper before formal evaluation.
+- Oracle and agents without a usable trajectory should write the final response to `/logs/agent/final_response.txt`. Installed agents that emit ATIF trajectories are graded from their final agent message.
 - The public source has no released AbstainGen generator. This adapter uses the released task and environment snapshot.
 - A Codex `gpt-6.2-astra` smoke on the pinned act pair timed out while searching for opaque record IDs that are not enumerable through that task's public tools. This is recorded as an agent-discoverability signal and is not used as a parity score.
 
