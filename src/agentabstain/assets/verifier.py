@@ -99,6 +99,10 @@ def _find_final_text(value: Any) -> str:
 
 
 def _load_response() -> tuple[str, str]:
+    for candidate in (AGENT_DIR / "trajectory.json", AGENT_DIR / "agentabstain_parity.json"):
+        found = _find_final_text(_load_json(candidate, {}))
+        if found:
+            return found, candidate.name
     response_path = AGENT_DIR / "final_response.txt"
     try:
         response = response_path.read_text(encoding="utf-8").strip()
@@ -106,10 +110,6 @@ def _load_response() -> tuple[str, str]:
         response = ""
     if response:
         return response, "final_response.txt"
-    for candidate in (AGENT_DIR / "trajectory.json", AGENT_DIR / "agentabstain_parity.json"):
-        found = _find_final_text(_load_json(candidate, {}))
-        if found:
-            return found, candidate.name
     return "", "missing"
 
 

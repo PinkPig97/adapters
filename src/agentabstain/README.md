@@ -19,7 +19,7 @@ AgentAbstain is described in [AgentAbstain: Do LLM Agents Know When Not to Act?]
 - Runs the original environment implementations in a private per-task runtime sidecar. The main agent container receives only public tool schemas and an HTTP bridge.
 - Writes an append-only execution log to a named volume mounted read-only in the agent container.
 - Uses the persisted native `critical_actions` list for the commit check and preserves informational versus operational combined scoring.
-- Stores the final response at `/logs/agent/final_response.txt`, with a trajectory fallback for installed agents that emit a final response in ATIF logs.
+- Reads the final assistant response from Harbor trajectory logs when available, with `/logs/agent/final_response.txt` as the Oracle and no-trajectory fallback.
 
 The Harbor instruction presents the original system prompt and user request in separate labeled sections because the standard Harbor task format has one instruction file. This is an adapter-level prompt transport difference and must be applied symmetrically in any parity comparison.
 
