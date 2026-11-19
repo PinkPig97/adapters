@@ -98,9 +98,22 @@ def _find_final_text(value: Any) -> str:
     return ""
 
 
+def _find_atif_final_text(value: Any) -> str:
+    if not isinstance(value, dict) or not isinstance(value.get("steps"), list):
+        return ""
+    for step in reversed(value["steps"]):
+        if not isinstance(step, dict) or step.get("source") != "agent":
+            continue
+        message = step.get("message")
+        if isinstance(message, str) and message.strip():
+            return message.strip()
+    return ""
+
+
 def _load_response() -> tuple[str, str]:
     for candidate in (AGENT_DIR / "trajectory.json", AGENT_DIR / "agentabstain_parity.json"):
-        found = _find_final_text(_load_json(candidate, {}))
+        payload = _load_json(candidate, {})
+        found = _find_atif_final_text(payload) or _find_final_text(payload)
         if found:
             return found, candidate.name
     response_path = AGENT_DIR / "final_response.txt"
