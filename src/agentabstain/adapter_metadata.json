@@ -1,0 +1,32 @@
+[
+  {
+    "adapter_name": "agentabstain",
+    "adapter_builders": [
+      "James Zhu (zhuyangjunfeng@gmail.com)"
+    ],
+    "original_benchmark": [
+      {
+        "split": "test",
+        "size": 526,
+        "harness": "agent",
+        "supported_agents": ["codex", "claude-code", "gemini-cli"],
+        "adaptable": true,
+        "notes": null
+      }
+    ],
+    "harbor_adapter": [
+      {
+        "split": "test",
+        "adapted_benchmark_size": 526,
+        "parity_benchmark_size": 94,
+        "parity_sampling_rate": 0.1787,
+        "registry_benchmark_size": null,
+        "added_agents": [],
+        "parity_matching_agents": [],
+        "parity_unmatching_agents": null,
+        "parity_costs": null,
+        "notes": "Public AgentAbstain corpus: 526 variants in 263 act/abstain pairs, eight categories, and 42 environments. The parity slice contains 47 pairs (94 variants) and covers all environments."
+      }
+    ]
+  }
+]

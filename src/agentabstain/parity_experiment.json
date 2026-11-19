@@ -1,0 +1,26 @@
+[
+  {
+    "adapter_name": "agentabstain",
+    "agent": "pending",
+    "model": "pending",
+    "date": "2026-11-19",
+    "adapted_benchmark_size": 526,
+    "parity_benchmark_size": 94,
+    "number_of_runs": 0,
+    "notes": "Formal original-to-Harbor parity has not been run. The parity subset is a deterministic 47-pair sample covering all 42 environments. Current evidence covers full generation, runtime imports, sidecar Docker builds, Oracle smoke, and a 10-task Oracle sanity slice. The offline judge stub is excluded from parity claims.",
+    "original_parity_repo": "https://github.com/AntiQuality/agentabstain",
+    "adapter_pr": [],
+    "dataset_pr": [],
+    "parity_pr": [],
+    "metrics": [
+      {
+        "benchmark_name": "AgentAbstain",
+        "metric": "paired accuracy / CAR",
+        "original": "pending",
+        "harbor": "pending",
+        "original_runs": [],
+        "harbor_runs": []
+      }
+    ]
+  }
+]
