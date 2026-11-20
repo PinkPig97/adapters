@@ -90,7 +90,7 @@ A real judge requires `OPENAI_API_KEY`, an OpenAI-compatible `OPENAI_BASE_URL` w
 
 The verifier writes `agentabstain_metrics.json` and the scalar reward to `/logs/verifier`. The `combined` metric follows the source semantics. Informational tasks use the response judge. Operational tasks require both the commit check and the response judge. Pair-level paired accuracy and CAR must be aggregated after both variants have run, using the shared `pair_id` in `tests/task_metadata.json`.
 
-The adapter has a verified full generator, sidecar Docker build, a 10-task Oracle sanity slice, and synthetic verifier checks. The final current-code two-variant smoke is rerun as part of local release validation.
+The adapter has a verified full generator, sidecar Docker build, separate-verifier task package, and synthetic verifier checks. Local release validation covers the pinned two-variant smoke, a reference and known-wrong verifier pair, and the full generated corpus on Harbor v0.26.0.
 
 ## Comparison with Original Benchmark (Parity)
 
