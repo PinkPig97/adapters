@@ -18,7 +18,7 @@ AgentAbstain is described in [AgentAbstain: Do LLM Agents Know When Not to Act?]
 - Preserves native pair IDs while using registry-safe neutral task names such as `agentabstain/ambiguous_action_specification-preview_001-variant-a`.
 - Runs the original environment implementations in a private per-task runtime sidecar. The main agent container receives only public tool schemas and an HTTP bridge.
 - Writes an append-only execution log to a named volume mounted read-only in the agent container.
-- Runs grading in a separate verifier image. Only the declared final-response and runtime-log artifacts cross from the agent phase into verification.
+- Runs grading in a separate verifier image. The verifier reads only the declared final-response and runtime-log artifacts. Harbor also collects its conventional `/logs/artifacts` manifest, which this verifier does not read.
 - Uses the persisted native `critical_actions` list for the commit check and preserves informational versus operational combined scoring.
 - Reads the final assistant response from the declared `/logs/agent/final_response.txt` artifact. The verifier retains trajectory parsing for local/shared diagnostics, but separate verification uses the explicit response handoff.
 
@@ -50,7 +50,7 @@ The Harbor instruction presents the original system prompt and user request in s
     └── task_metadata.json
 ```
 
-`tests/` and `solution/` are available to the separate verifier or only to OracleAgent. The main agent image does not copy grader code. The verifier receives only the artifact paths declared in `task.toml`.
+`tests/` and `solution/` are available to the separate verifier or only to OracleAgent. The main agent image does not copy grader code. The verifier receives the declared artifact paths in `task.toml`; Harbor's conventional artifact manifest is collected separately and ignored by the grading code.
 
 ## Usage: Create Task Directories
 
@@ -126,6 +126,7 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 - The adapter's judge uses an OpenAI-compatible Chat Completions request, while the released evaluator currently uses the Responses API. This transport difference is recorded for parity control, and published parity must keep endpoint behavior fixed or update the adapter judge to match.
 - Harbor verifier runs do not receive the source runner's `run_error_kind`. Missing responses, required artifacts, judge credentials, or unrecovered judge API/parse errors produce a reward of `0` instead of being excluded from the source denominator. Transient judge failures receive bounded retries before that result. This is a known parity limitation and must be reported with formal scores.
 - Native `critical_actions` is the grading source of truth. The adapter does not recompute it from the DAG or tool schema.
+- `SOURCE_MANIFEST.json` records the source code commit and dataset revision used for this adapter. The generator does not fetch or verify a remote revision, so parity and release builds must supply that pinned snapshot explicitly through `--data-dir`.
 - Oracle and agents should write the final response to `/logs/agent/final_response.txt` because the separate verifier receives that explicit handoff.
 - The public source has no released AbstainGen generator. This adapter uses the released task and environment snapshot.
 - An exploratory Codex smoke on the pinned act pair timed out while searching for opaque record IDs that are not enumerable through that task's public tools. This is recorded as an agent-discoverability signal and is not used as a parity score.
@@ -134,7 +135,7 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 ## Installation / Prerequisites
 
 - Python 3.11 or newer and `uv`
-- Harbor with Docker Compose support
+- Harbor v0.26.0 or newer with Docker Compose support. The separate-verifier task contract was validated against v0.26.0 at commit `3cb62739`.
 - Docker Desktop or a Docker daemon with the generated compose services enabled
 - The public AgentAbstain dataset snapshot
 - Judge credentials for real response scoring
