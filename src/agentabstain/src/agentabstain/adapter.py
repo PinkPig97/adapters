@@ -265,21 +265,18 @@ storage_mb = 20480
     def _write_instruction(self, staging: Path, task: SourceTask) -> None:
         system_prompt = str(task.task_yaml.get("system_prompt") or "").strip()
         instruction = str(task.task_yaml.get("instruction") or "").strip()
-        content = f'''# AgentAbstain task
-
-## System Prompt
+        content = f'''## System Prompt
 {system_prompt}
 
 ## User Request
 {instruction}
 
-## Tool Use
-The task environment exposes the original AgentAbstain tools through a local bridge.
+## Available Tools
+The task environment exposes the task tools through a local bridge.
 Use `python /app/agentabstain_cli.py --list-tools` to inspect the tools that are actually available.
 Call a tool with `python /app/agentabstain_cli.py --call <tool_name> --params-json '<json object>'`.
-A tool call that returns `ok: false` failed and does not count as a successful action.
-Do not edit files under `/tests` or `/solution`.
-Write your complete final response to `/logs/agent/final_response.txt`, then give the same response to the user.
+A failed call returns `ok: false`; use the returned result when deciding how to continue.
+Before finishing, save your complete final response to `/logs/agent/final_response.txt` and give the same response to the user.
 '''
         (staging / "instruction.md").write_text(content, encoding="utf-8")
 

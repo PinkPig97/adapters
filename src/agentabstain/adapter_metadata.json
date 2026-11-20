@@ -9,9 +9,9 @@
         "split": "test",
         "size": 526,
         "harness": "agent",
-        "supported_agents": ["codex", "claude-code", "gemini-cli"],
+        "supported_agents": ["None"],
         "adaptable": true,
-        "notes": null
+        "notes": "The released task corpus is harness-agnostic and does not pin agent versions."
       }
     ],
     "harbor_adapter": [
@@ -20,12 +20,12 @@
         "adapted_benchmark_size": 526,
         "parity_benchmark_size": 94,
         "parity_sampling_rate": 0.1787,
-        "registry_benchmark_size": null,
-        "added_agents": [],
-        "parity_matching_agents": [],
-        "parity_unmatching_agents": null,
+        "registry_benchmark_size": 526,
+        "added_agents": ["None"],
+        "parity_matching_agents": ["None"],
+        "parity_unmatching_agents": ["None"],
         "parity_costs": null,
-        "notes": "Public AgentAbstain corpus: 526 variants in 263 act/abstain pairs, eight categories, and 42 environments. The parity slice contains 47 pairs (94 variants) and covers all environments."
+        "notes": "Public AgentAbstain corpus: 526 variants in 263 act/abstain pairs, eight categories, and 42 environments. The 47-pair (94-variant) slice is a development coverage slice for all environments. The final parity subset is pending maintainer approval."
       }
     ]
   }

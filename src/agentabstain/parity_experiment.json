@@ -7,7 +7,7 @@
     "adapted_benchmark_size": 526,
     "parity_benchmark_size": 94,
     "number_of_runs": 0,
-    "notes": "Formal original-to-Harbor parity has not been run. The current deterministic parity generator exposes a 47-pair sample covering all 42 environments. The proposed pilot starts with four complete pairs and then expands to a maintainer-approved pair-complete 5–10% subset. Exact agent/model settings, run count, judge endpoint, and parity key remain pending maintainer confirmation. Current evidence covers full generation, separate-verifier Docker builds, Oracle smoke, and the latest Harbor verifier checks. The offline judge stub is excluded from parity claims.",
+    "notes": "Formal original-to-Harbor parity has not been run. The deterministic 47-pair sample covering all 42 environments is a development coverage slice. The proposed pilot starts with four complete pairs and then expands to a maintainer-approved pair-complete 5–10% parity subset. Exact agent/model settings, run count, judge endpoint, and parity key remain pending maintainer confirmation. Current evidence covers full generation, separate-verifier Docker builds, Oracle smoke, and the latest Harbor verifier checks. The offline judge stub is excluded from parity claims.",
     "original_parity_repo": "https://github.com/AntiQuality/agentabstain",
     "adapter_pr": ["https://github.com/harbor-index/adapters/pull/24"],
     "dataset_pr": null,

@@ -52,7 +52,7 @@ The Harbor instruction presents the original system prompt and user request in s
 
 `tests/` and `solution/` are available to the separate verifier or only to OracleAgent. The main agent image does not copy grader code. The verifier receives only the artifact paths declared in `task.toml`.
 
-## Usage
+## Usage: Create Task Directories
 
 The adapter is a standalone uv project. Download the public dataset once, then generate tasks.
 
@@ -86,22 +86,30 @@ uv run harbor trial start \
 
 A real judge requires `OPENAI_API_KEY`, an OpenAI-compatible `OPENAI_BASE_URL` when needed, and `AGENTABSTAIN_JUDGE_MODEL`. For local structural and Oracle smoke tests only, set `AGENTABSTAIN_JUDGE_STUB=expected`. Stub results are diagnostic and do not count as benchmark parity.
 
-## Run Evaluation / Harness in Terminal Bench Harbor
+## Run Evaluation / Harness
 
 The verifier writes `agentabstain_metrics.json` and the scalar reward to `/logs/verifier`. The `combined` metric follows the source semantics. Informational tasks use the response judge. Operational tasks require both the commit check and the response judge. Pair-level paired accuracy and CAR must be aggregated after both variants have run, using the shared `pair_id` in `tests/task_metadata.json`.
 
-The adapter has a verified full generator, sidecar Docker build, separate-verifier task package, and synthetic verifier checks. Local release validation covers the pinned two-variant smoke, a reference and known-wrong verifier pair, and the full generated corpus on Harbor v0.26.0.
+The adapter has a verified full generator, sidecar Docker build, separate-verifier task package, and synthetic verifier checks. Local release validation covers the pinned two-variant smoke, a reference and known-wrong verifier pair, and structural checks over the full generated corpus. The Harbor v0.26.0 full Oracle sweep is tracked separately while the review evidence is assembled. The local Harbor checkout resolves tag `v0.26.0` to commit `3cb62739`.
 
 ## Comparison with Original Benchmark (Parity)
 
 Formal original-to-Harbor parity with two or more runs per side is still pending. The current `parity_experiment.json` intentionally contains no scores or PR links until those runs and contribution links exist. The proposed pilot is pair-complete, starts with four pairs, and then expands to a maintainer-approved 5–10% subset. Exact agent/model settings, run count, judge endpoint, and parity key remain pending maintainer confirmation. The Harbor judge uses an OpenAI-compatible Chat Completions request with temperature 0. A parity report must record the judge endpoint, prompt transport, number of runs, and whether the offline stub was used.
 
 ```bash
-# Generate the deterministic 47-pair parity subset
+# Generate the deterministic 47-pair development slice
 uv run agentabstain --data-dir /path/to/agentabstain/data \
   --output-dir /tmp/agentabstain-parity --split parity --overwrite
 
-# Run one Harbor side after the team approves the agent/model settings
+# Original benchmark side, from an AgentAbstain checkout, after the team
+# approves the harness and model settings for the same source pair IDs
+python -m src.scripts.run_inference \
+  --runtime-config /path/to/agentabstain/src/configs/<runtime-config>.yaml \
+  --task-config /path/to/agentabstain/src/configs/<task-config>.yaml \
+  --workers 4
+python -m eval.runner --provider <provider> --model <model>
+
+# Harbor side with the same pair IDs and approved agent/model settings
 uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
   --n-concurrent 4
 ```
@@ -110,10 +118,13 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 |---|---|---:|---:|---:|---:|---:|
 | pending | pending | paired accuracy / CAR | pending | pending | pending | pending |
 
-## Notes and caveats
+## Notes & Caveats
 
 - The sidecar prevents the agent from reading or modifying initial state, task metadata, critical actions, or the runtime process. The agent can read the execution log because tool results are part of the observable trajectory.
 - The separate verifier receives `/logs/agent/final_response.txt` and `/runtime_logs/execution.json` through the task artifact list. Grading does not run in the agent workspace. The runtime log is collected from the `runtime` compose service.
+- The adapter exposes the native tools through a CLI bridge because the generated Harbor task has no native MCP server entry point. The instruction also labels the benchmark as an AgentAbstain task, separates the source system prompt and user request, tells the agent how to invoke the bridge, and requires the final response artifact. These are adapter transport changes, so parity runs must use the same bridge and prompt transport on both sides.
+- The adapter's judge uses an OpenAI-compatible Chat Completions request, while the released evaluator currently uses the Responses API. This transport difference is recorded for parity control, and published parity must keep endpoint behavior fixed or update the adapter judge to match.
+- Harbor verifier runs do not receive the source runner's `run_error_kind`. Missing responses, required artifacts, judge credentials, or unrecovered judge API/parse errors produce a reward of `0` instead of being excluded from the source denominator. Transient judge failures receive bounded retries before that result. This is a known parity limitation and must be reported with formal scores.
 - Native `critical_actions` is the grading source of truth. The adapter does not recompute it from the DAG or tool schema.
 - Oracle and agents should write the final response to `/logs/agent/final_response.txt` because the separate verifier receives that explicit handoff.
 - The public source has no released AbstainGen generator. This adapter uses the released task and environment snapshot.
