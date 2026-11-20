@@ -57,7 +57,7 @@ The Harbor instruction presents the original system prompt and user request in s
 The adapter is a standalone uv project. Download the public dataset once, then generate tasks.
 
 ```bash
-cd adapters/agentabstain
+cd src/agentabstain
 uv sync
 uv run agentabstain \
   --data-dir /path/to/agentabstain/data \
