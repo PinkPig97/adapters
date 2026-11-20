@@ -122,7 +122,7 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 
 - The sidecar prevents the agent from reading or modifying initial state, task metadata, critical actions, or the runtime process. The agent can read the execution log because tool results are part of the observable trajectory.
 - The separate verifier receives `/logs/agent/final_response.txt` and `/runtime_logs/execution.json` through the task artifact list. Grading does not run in the agent workspace. The runtime log is collected from the `runtime` compose service.
-- The adapter exposes the native tools through a CLI bridge because the generated Harbor task has no native MCP server entry point. The instruction also labels the benchmark as an AgentAbstain task, separates the source system prompt and user request, tells the agent how to invoke the bridge, and requires the final response artifact. These are adapter transport changes, so parity runs must use the same bridge and prompt transport on both sides.
+- The adapter exposes the native tools through a CLI bridge because the generated Harbor task has no native MCP server entry point. The instruction preserves the source system prompt and user request in labeled sections, adds an Available Tools bridge section, and requires the final response artifact. These are adapter transport changes, so parity runs must use the same bridge and prompt transport on both sides.
 - The adapter's judge uses an OpenAI-compatible Chat Completions request, while the released evaluator currently uses the Responses API. This transport difference is recorded for parity control, and published parity must keep endpoint behavior fixed or update the adapter judge to match.
 - Harbor verifier runs do not receive the source runner's `run_error_kind`. Missing responses, required artifacts, judge credentials, or unrecovered judge API/parse errors produce a reward of `0` instead of being excluded from the source denominator. Transient judge failures receive bounded retries before that result. This is a known parity limitation and must be reported with formal scores.
 - Native `critical_actions` is the grading source of truth. The adapter does not recompute it from the DAG or tool schema.
@@ -130,7 +130,6 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 - Oracle and agents should write the final response to `/logs/agent/final_response.txt` because the separate verifier receives that explicit handoff.
 - The public source has no released AbstainGen generator. This adapter uses the released task and environment snapshot.
 - An exploratory Codex smoke on the pinned act pair timed out while searching for opaque record IDs that are not enumerable through that task's public tools. This is recorded as an agent-discoverability signal and is not used as a parity score.
-- The Harbor verifier cannot read Harbor's host-side `run_error_kind`, so infrastructure-error filtering is not identical to the upstream evaluator. Formal parity must account for this when comparing agent failures.
 
 ## Installation / Prerequisites
 

@@ -29,7 +29,7 @@ def main() -> None:
         "--task-ids",
         nargs="+",
         default=None,
-        help="Only generate rows matching a source, pair, or neutral task ID",
+        help="Only generate rows matching a category-qualified source, pair, or neutral task ID",
     )
     parser.add_argument(
         "--data-dir",
