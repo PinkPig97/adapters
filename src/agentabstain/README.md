@@ -94,7 +94,7 @@ The adapter has a verified full generator, sidecar Docker build, separate-verifi
 
 ## Comparison with Original Benchmark (Parity)
 
-Formal original-to-Harbor parity with two or more runs per side is still pending. The current `parity_experiment.json` intentionally contains no scores or PR links until those runs and contribution links exist. The proposed pilot is pair-complete, starts with four pairs, and then expands to a maintainer-approved 5–10% subset. Exact agent/model settings, run count, judge endpoint, and parity key remain pending maintainer confirmation. The Harbor judge uses an OpenAI-compatible Chat Completions request with temperature 0. A parity report must record the judge endpoint, prompt transport, number of runs, and whether the offline stub was used.
+Formal original-to-Harbor parity with two or more runs per side is still pending. The current `parity_experiment.json` intentionally contains no scores or dataset/parity contribution links until those runs and contribution links exist. The proposed pilot is pair-complete, starts with four pairs, and then expands to a maintainer-approved 5–10% subset. Exact agent/model settings, run count, judge endpoint, and parity key remain pending maintainer confirmation. The Harbor judge uses an OpenAI-compatible Chat Completions request with temperature 0. A parity report must record the judge endpoint, prompt transport, number of runs, and whether the offline stub was used.
 
 ```bash
 # Generate the deterministic 47-pair development slice
