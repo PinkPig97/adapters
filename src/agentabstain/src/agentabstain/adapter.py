@@ -215,7 +215,7 @@ class AgentAbstainAdapter:
         content = f'''schema_version = "1.4"
 
 # The verifier runs in its own sandbox. These artifacts are the only agent/runtime
-# outputs needed by the verifier for trajectory grading and the sidecar commit check.
+# outputs needed by the verifier for response grading and the sidecar commit check.
 artifacts = [
   "/logs/agent/final_response.txt",
   {{ source = "/runtime_logs/execution.json", service = "runtime" }},
