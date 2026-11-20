@@ -74,7 +74,7 @@ uv run agentabstain --data-dir /path/to/data \
   --output-dir /tmp/agentabstain-parity --split parity --overwrite
 ```
 
-`--limit N` selects the first N source rows and may produce a partial pair. Use `--split smoke` or `--task-ids category/preview_NNN` when pair completeness matters. `--task-ids` accepts a source pair ID, a native row ID, or a generated neutral ID.
+`--limit N` selects the first N source rows and may produce a partial pair. Use `--split smoke` or `--task-ids category/preview_NNN` when pair completeness matters. `--task-ids` accepts a source pair ID, a category-qualified source ID, or a generated neutral ID. Category qualification avoids collisions among repeated preview numbers.
 
 Run an individual Harbor trial from the Harbor repository.
 

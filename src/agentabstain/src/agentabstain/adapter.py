@@ -169,7 +169,8 @@ class AgentAbstainAdapter:
         for pair_id, rows in grouped.items():
             aliases = {pair_id}
             for task in rows:
-                aliases.update({task.task_id, self._neutral_id(task)})
+                aliases.add(self._neutral_id(task))
+                aliases.add(f"{task.category}/{task.task_id}")
                 aliases.add(f"{task.category}/{task.task_id}/{task.task_type}")
             all_known.update(aliases)
             if wanted & aliases:
