@@ -135,7 +135,7 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 ## Installation / Prerequisites
 
 - Python 3.11 or newer and `uv`
-- Harbor v0.26.0 or newer with Docker Compose support. The separate-verifier task contract was validated against v0.26.0 at commit `3cb62739`.
+- Harbor v0.26.0 with Docker Compose support. The separate-verifier task contract was validated against commit `3cb62739`.
 - Docker Desktop or a Docker daemon with the generated compose services enabled
 - The public AgentAbstain dataset snapshot
 - Judge credentials for real response scoring

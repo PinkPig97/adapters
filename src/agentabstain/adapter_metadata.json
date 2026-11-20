@@ -25,7 +25,7 @@
         "parity_matching_agents": ["None"],
         "parity_unmatching_agents": ["None"],
         "parity_costs": null,
-        "notes": "Public AgentAbstain corpus: 526 variants in 263 act/abstain pairs, eight categories, and 42 environments. The 47-pair (94-variant) slice is a development coverage slice for all environments. The final parity subset is pending maintainer approval."
+        "notes": "Public AgentAbstain corpus: 526 variants in 263 act/abstain pairs, eight categories, and 42 environments. The intended registry count is 526, pending registry publication. The 47-pair (94-variant) slice is a development coverage slice for all environments. The final parity subset is pending maintainer approval."
       }
     ]
   }
