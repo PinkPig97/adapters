@@ -18,8 +18,9 @@ AgentAbstain is described in [AgentAbstain: Do LLM Agents Know When Not to Act?]
 - Preserves native pair IDs while using registry-safe neutral task names such as `agentabstain/ambiguous_action_specification-preview_001-variant-a`.
 - Runs the original environment implementations in a private per-task runtime sidecar. The main agent container receives only public tool schemas and an HTTP bridge.
 - Writes an append-only execution log to a named volume mounted read-only in the agent container.
+- Runs grading in a separate verifier image. Only the declared final-response and runtime-log artifacts cross from the agent phase into verification.
 - Uses the persisted native `critical_actions` list for the commit check and preserves informational versus operational combined scoring.
-- Reads the final assistant response from Harbor trajectory logs when available, with `/logs/agent/final_response.txt` as the Oracle and no-trajectory fallback.
+- Reads the final assistant response from the declared `/logs/agent/final_response.txt` artifact. The verifier retains trajectory parsing for local/shared diagnostics, but separate verification uses the explicit response handoff.
 
 The Harbor instruction presents the original system prompt and user request in separate labeled sections because the standard Harbor task format has one instruction file. This is an adapter-level prompt transport difference and must be applied symmetrically in any parity comparison.
 
@@ -42,13 +43,14 @@ The Harbor instruction presents the original system prompt and user request in s
 │   ├── oracle.py
 │   └── source_task.yaml
 └── tests/
+    ├── Dockerfile
     ├── test.sh
     ├── verifier.py
     ├── source_task.yaml
     └── task_metadata.json
 ```
 
-`tests/` and `solution/` are copied by Harbor after the normal agent run or only for OracleAgent. The main image does not copy them.
+`tests/` and `solution/` are available to the separate verifier or only to OracleAgent. The main agent image does not copy grader code. The verifier receives only the artifact paths declared in `task.toml`.
 
 ## Usage
 
@@ -92,7 +94,7 @@ The adapter has a verified full generator, sidecar Docker build, a 10-task Oracl
 
 ## Comparison with Original Benchmark (Parity)
 
-Formal original-to-Harbor parity with two or more runs per side is still pending. The current `parity_experiment.json` intentionally contains no scores or PR links until those runs and contribution links exist. The Harbor judge uses an OpenAI-compatible Chat Completions request with temperature 0. A parity report must record the judge endpoint, model, prompt transport, number of runs, and whether the offline stub was used.
+Formal original-to-Harbor parity with two or more runs per side is still pending. The current `parity_experiment.json` intentionally contains no scores or PR links until those runs and contribution links exist. The proposed pilot is pair-complete, starts with four pairs, and then expands to a maintainer-approved 5–10% subset. Exact agent/model settings, run count, judge endpoint, and parity key remain pending maintainer confirmation. The Harbor judge uses an OpenAI-compatible Chat Completions request with temperature 0. A parity report must record the judge endpoint, prompt transport, number of runs, and whether the offline stub was used.
 
 ```bash
 # Generate the deterministic 47-pair parity subset
@@ -111,8 +113,9 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 ## Notes and caveats
 
 - The sidecar prevents the agent from reading or modifying initial state, task metadata, critical actions, or the runtime process. The agent can read the execution log because tool results are part of the observable trajectory.
+- The separate verifier receives `/logs/agent/final_response.txt` and `/runtime_logs/execution.json` through the task artifact list. Grading does not run in the agent workspace. The runtime log is collected from the `runtime` compose service.
 - Native `critical_actions` is the grading source of truth. The adapter does not recompute it from the DAG or tool schema.
-- Oracle and agents without a usable trajectory should write the final response to `/logs/agent/final_response.txt`. Installed agents that emit ATIF trajectories are graded from their final agent message.
+- Oracle and agents should write the final response to `/logs/agent/final_response.txt` because the separate verifier receives that explicit handoff.
 - The public source has no released AbstainGen generator. This adapter uses the released task and environment snapshot.
 - An exploratory Codex smoke on the pinned act pair timed out while searching for opaque record IDs that are not enumerable through that task's public tools. This is recorded as an agent-discoverability signal and is not used as a parity score.
 - The Harbor verifier cannot read Harbor's host-side `run_error_kind`, so infrastructure-error filtering is not identical to the upstream evaluator. Formal parity must account for this when comparing agent failures.

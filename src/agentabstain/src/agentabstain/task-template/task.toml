@@ -1,4 +1,9 @@
-version = "1.0"
+schema_version = "1.4"
+
+artifacts = [
+  "/logs/agent/final_response.txt",
+  { source = "/runtime_logs/execution.json", service = "runtime" },
+]
 
 [task]
 name = "agentabstain/example"
@@ -9,11 +14,15 @@ difficulty = "medium"
 category = "agentic-abstention"
 tags = ["agentic-abstention", "mcp"]
 
+[metadata.harbor.lint]
+ignore = ["artifact-log-overlap"]
+
 [agent]
 timeout_sec = 1800.0
 
 [verifier]
 timeout_sec = 300.0
+environment_mode = "separate"
 
 [environment]
 build_timeout_sec = 900.0

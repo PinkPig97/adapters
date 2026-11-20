@@ -211,7 +211,14 @@ class AgentAbstainAdapter:
     def _write_task_toml(self, staging: Path, task: SourceTask) -> None:
         variant = "variant-a" if task.task_type == "act" else "variant-b"
         tags = ["agentic-abstention", "mcp", task.category]
-        content = f'''version = "1.0"
+        content = f'''schema_version = "1.4"
+
+# The verifier runs in its own sandbox. These artifacts are the only agent/runtime
+# outputs needed by the verifier for trajectory grading and the sidecar commit check.
+artifacts = [
+  "/logs/agent/final_response.txt",
+  {{ source = "/runtime_logs/execution.json", service = "runtime" }},
+]
 
 [task]
 name = "agentabstain/{task.category}-{task.task_id}-{variant}"
@@ -231,11 +238,15 @@ difficulty = "medium"
 category = "agentic-abstention"
 tags = {json.dumps(tags)}
 
+[metadata.harbor.lint]
+ignore = ["artifact-log-overlap"]
+
 [agent]
 timeout_sec = 1800.0
 
 [verifier]
 timeout_sec = 300.0
+environment_mode = "separate"
 
 [verifier.env]
 OPENAI_API_KEY = "${{OPENAI_API_KEY:-}}"
@@ -423,6 +434,16 @@ exit "$status"
 '''
         (staging / "tests" / "test.sh").write_text(test_sh, encoding="utf-8")
         (staging / "tests" / "test.sh").chmod(0o755)
+        verifier_dockerfile = '''FROM python:3.11-slim
+
+WORKDIR /app
+RUN pip install --no-cache-dir pyyaml==6.0.3
+RUN mkdir -p /logs/agent /logs/verifier /runtime_logs
+COPY . /tests/
+'''
+        (staging / "tests" / "Dockerfile").write_text(
+            verifier_dockerfile, encoding="utf-8"
+        )
 
     def _write_solution(self, staging: Path, task: SourceTask) -> None:
         source_task = dict(task.task_yaml)
