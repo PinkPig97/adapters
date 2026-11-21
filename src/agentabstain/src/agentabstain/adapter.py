@@ -13,7 +13,7 @@ from typing import Any
 import yaml
 
 SOURCE_COMMIT = "cfc3faf7ab1cfd4892cde1158d6e43b2f312ddc3"
-DATASET_REVISION = "842228426c2a703347396501af61c7890972c7ee2"
+DATASET_REVISION = "842228426c2a703347396501af61c7890972c7ee"
 DATASET_URL = "https://huggingface.co/datasets/antiquality/agentabstain"
 
 

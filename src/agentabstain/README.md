@@ -6,7 +6,7 @@ This adapter packages the public [AgentAbstain](https://github.com/AntiQuality/a
 
 The source release contains 526 task variants arranged as 263 strict `act`/`abstain` pairs. The pairs cover eight scenario categories and 42 executable MCP environments. Each pair has one native task YAML for the should-act variant and one for the should-abstain variant. The adapter keeps the native task YAML, initial state, DAG, persisted `critical_actions`, `available_tools`, and `tool_overrides` for each variant.
 
-The source code is MIT licensed and the Hugging Face dataset is CC BY 4.0. The adapter records source commit `cfc3faf7ab1cfd4892cde1158d6e43b2f312ddc3` and dataset revision `842228426c2a703347396501af61c7890972c7ee2` in `SOURCE_MANIFEST.json`.
+The source code is MIT licensed and the Hugging Face dataset is CC BY 4.0. The adapter records source commit `cfc3faf7ab1cfd4892cde1158d6e43b2f312ddc3` and dataset revision `842228426c2a703347396501af61c7890972c7ee` in `SOURCE_MANIFEST.json`.
 
 ## What is AgentAbstain?
 
