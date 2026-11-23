@@ -1,28 +1,16 @@
-name: agentabstain
-description: |
-  AgentAbstain Harbor adapter. 526 variants in 263 paired act/abstain tasks.
+job_name: agentabstain-oracle
+jobs_dir: jobs/agentabstain
+n_concurrent_trials: 4
 
 datasets:
-  - path: datasets/agentabstain
+  - path: /tmp/agentabstain-full
 
 agents:
   - name: oracle
-  # Formal parity requires a team-approved agent and model with the original
-  # benchmark's prompt and tool settings.
-  # - name: codex
-  #   model_name: <approved-model>
+
+verifier:
+  env:
+    AGENTABSTAIN_JUDGE_STUB: expected
 
 environment:
   type: docker
-  force_build: false
-  delete: true
-  cpus: 2
-  memory: 4G
-  storage: 20G
-
-jobs_dir: jobs/agentabstain
-trials_dir: trials/agentabstain
-
-orchestrator:
-  type: local
-  n_concurrent_trials: 4

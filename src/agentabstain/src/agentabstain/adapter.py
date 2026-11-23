@@ -53,11 +53,15 @@ class AgentAbstainAdapter:
         self.task_ids = task_ids
         self.data_dir = Path(data_dir or "data")
         self.split = split
-        self.assets_dir = Path(__file__).resolve().parents[2] / "assets"
+        self.assets_dir = Path(__file__).resolve().parent / "assets"
 
     def run(self) -> None:
         tasks = self._load_tasks()
         tasks = self._select_split(tasks)
+        if self.split == "parity":
+            allowed = {self._neutral_id(task) for task in tasks}
+            if any(path.parent.name not in allowed for path in self.output_dir.glob("*/task.toml")):
+                raise ValueError("Parity output contains tasks outside the measured subset. Use a fresh output directory.")
         tasks = self._select_ids(tasks)
         if self.limit is not None:
             if self.limit <= 0:
@@ -115,6 +119,13 @@ class AgentAbstainAdapter:
     def _select_split(self, tasks: list[SourceTask]) -> list[SourceTask]:
         if self.split == "full":
             return tasks
+        if self.split == "parity":
+            manifest = Path(__file__).with_name("parity_pairs.txt")
+            pair_ids = set(manifest.read_text(encoding="utf-8").splitlines())
+            missing = pair_ids - {task.pair_id for task in tasks}
+            if missing:
+                raise ValueError(f"Parity pairs missing from the source snapshot: {sorted(missing)}")
+            return [task for task in tasks if task.pair_id in pair_ids]
         grouped: dict[str, list[SourceTask]] = {}
         for task in tasks:
             grouped.setdefault(task.pair_id, []).append(task)
@@ -123,15 +134,15 @@ class AgentAbstainAdapter:
             selected = [item for item in pairs if item[0] == "ambiguous_action_specification/preview_001"]
             if not selected:
                 raise ValueError("Pinned smoke pair ambiguous_action_specification/preview_001 is missing")
-        elif self.split == "parity":
-            selected = self._select_parity_pairs(pairs)
+        elif self.split == "development":
+            selected = self._select_development_pairs(pairs)
         else:
             raise ValueError(f"Unknown split {self.split!r}")
         selected_ids = {key for key, _ in selected}
         return [task for task in tasks if task.pair_id in selected_ids]
 
     @staticmethod
-    def _select_parity_pairs(pairs: list[tuple[str, list[SourceTask]]]) -> list[tuple[str, list[SourceTask]]]:
+    def _select_development_pairs(pairs: list[tuple[str, list[SourceTask]]]) -> list[tuple[str, list[SourceTask]]]:
         by_category: dict[str, list[tuple[str, list[SourceTask]]]] = {}
         for pair_id, rows in pairs:
             by_category.setdefault(rows[0].category, []).append((pair_id, rows))

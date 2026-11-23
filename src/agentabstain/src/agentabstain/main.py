@@ -39,9 +39,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--split",
-        choices=("full", "smoke", "parity"),
+        choices=("full", "smoke", "parity", "development"),
         default="full",
-        help="Use the full corpus, one smoke pair, or the 42-environment parity sample",
+        help="Select the full corpus, one smoke pair, the 16 measured parity pairs, or the 42-environment development sample",
     )
     args = parser.parse_args()
 

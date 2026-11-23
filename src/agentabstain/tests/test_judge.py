@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import openai
 
 SPEC = importlib.util.spec_from_file_location(
-    "agentabstain_verifier", Path(__file__).resolve().parents[1] / "assets" / "verifier.py"
+    "agentabstain_verifier", Path(__file__).resolve().parents[1] / "src/agentabstain/assets/verifier.py"
 )
 verifier = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(verifier)

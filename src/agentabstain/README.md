@@ -14,7 +14,7 @@ AgentAbstain is described in [AgentAbstain: Do LLM Agents Know When Not to Act?]
 
 ## Adapter Features
 
-- Generates all 526 variants or reproducible `smoke` and `parity` subsets from the public dataset snapshot.
+- Generates all 526 variants or the reproducible `smoke`, `development` and `parity` subsets from the public dataset snapshot.
 - Preserves native pair IDs while using registry-safe neutral task names such as `agentabstain/ambiguous_action_specification-preview_001-variant-a`.
 - Runs the original environment implementations in a private per-task runtime sidecar. The main agent container receives only public tool schemas and an HTTP bridge.
 - Writes an append-only execution log to a named volume mounted read-only in the agent container.
@@ -22,7 +22,7 @@ AgentAbstain is described in [AgentAbstain: Do LLM Agents Know When Not to Act?]
 - Uses the persisted native `critical_actions` list for the commit check and preserves informational versus operational combined scoring.
 - Reads the final assistant response from the declared `/logs/agent/final_response.txt` artifact. The verifier retains trajectory parsing for local/shared diagnostics, but separate verification uses the explicit response handoff.
 
-The Harbor instruction presents the original system prompt and user request in separate labeled sections because the standard Harbor task format has one instruction file. This is an adapter-level prompt transport difference and must be applied symmetrically in any parity comparison.
+The matched Harbor agent, `agentabstain.parity_agent:AgentAbstainSDK`, reads the original system prompt and user request back from the task instruction. It gives the OpenAI Agents SDK the public tool schemas and returns the sidecar results in the native MCP format.
 
 ## Generated Task Structure
 
@@ -52,79 +52,95 @@ The Harbor instruction presents the original system prompt and user request in s
 
 `tests/` and `solution/` are available to the separate verifier or only to OracleAgent. The main agent image does not copy grader code. The verifier receives the declared artifact paths in `task.toml`; Harbor's conventional artifact manifest is collected separately and ignored by the grading code.
 
-## Usage: Create Task Directories
-
-The adapter is a standalone uv project. Download the public dataset once, then generate tasks.
-
-```bash
-cd src/agentabstain
-uv sync
-uv run agentabstain \
-  --data-dir /path/to/agentabstain/data \
-  --output-dir /path/to/datasets/agentabstain
-```
-
-Useful development subsets are one pair for a smoke test and a reproducible 47-pair slice covering all 42 environments.
-
-```bash
-uv run agentabstain --data-dir /path/to/data \
-  --output-dir /tmp/agentabstain-smoke --split smoke --overwrite
-
-uv run agentabstain --data-dir /path/to/data \
-  --output-dir /tmp/agentabstain-parity --split parity --overwrite
-```
-
-`--limit N` selects the first N source rows and may produce a partial pair. Use `--split smoke` or `--task-ids category/preview_NNN` when pair completeness matters. `--task-ids` accepts a source pair ID, a category-qualified source ID, or a generated neutral ID. Category qualification avoids collisions among repeated preview numbers.
-
-Run an individual Harbor trial from the Harbor repository.
-
-```bash
-uv run harbor trial start \
-  -p /path/to/datasets/agentabstain/<task_id> \
-  -a <agent> -m <model>
-```
-
-A real judge requires `OPENAI_API_KEY`, an OpenAI-compatible `OPENAI_BASE_URL` when needed, and `AGENTABSTAIN_JUDGE_MODEL`. For local structural and Oracle smoke tests only, set `AGENTABSTAIN_JUDGE_STUB=expected`. Stub results are diagnostic and do not count as benchmark parity.
-
 ## Run Evaluation / Harness
 
-The verifier writes `agentabstain_metrics.json` to `/logs/verifier`. A completed judgment also produces a scalar reward. The `combined` metric follows the source semantics. Informational tasks use the response judge. Operational tasks require both the commit check and the response judge. Pair-level paired accuracy and CAR must be aggregated after both variants have run, using the shared `pair_id` in `tests/task_metadata.json`.
+After registry publication, the full dataset will be available as `agentabstain/agentabstain` and the requested subset as `agentabstain/agentabstain@parity`. During review, point Harbor at the generated directories or a task in the dataset PR. [Dataset contribution](https://github.com/harbor-framework/harbor-datasets/pull/298)
 
-Run the offline judge and tool-result tests from this adapter directory with `uv run --with openai==3.55.1 --with httpx2==2.16.2 --with fastmcp==4.2.2 python -m unittest discover -s tests`.
+```bash
+harbor run -p /tmp/agentabstain-smoke -a oracle --verifier-env AGENTABSTAIN_JUDGE_STUB=expected
+```
 
-The adapter has a verified full generator, sidecar Docker build, separate-verifier task package, and synthetic verifier checks. Local release validation covers the pinned two-variant smoke, a reference and known-wrong verifier pair, and structural checks over the full generated corpus. The Harbor v0.26.0 full Oracle sweep is tracked separately while the review evidence is assembled. The local Harbor checkout resolves tag `v0.26.0` to commit `3cb62739`.
+The separate verifier reads the saved final answer and runtime tool log. Informational tasks use the response judge. Operational tasks require both a passing response judgment and the source commit check. A completed run writes `reward.txt` and `agentabstain_metrics.json`. A missing answer, log or judgment leaves the task ungraded.
+
+The offline package check ran each of the 526 reference solutions against its own fresh runtime, CLI and verifier. All scored 1. On Harbor v0.27.0, the operational task `agentabstain/ambiguous_action_specification-preview_002-variant-a` scored 1 for the reference and 0 for a known-wrong agent. The reference called the required draft tool. The known-wrong agent claimed to finish and left the tool log empty. These controls use the offline expected-behavior judge. [Reference evidence](https://huggingface.co/datasets/harborframework/parity-experiments/discussions/299)
+
+Run the adapter's offline tests from its project directory with `uv run --with openai-agents==0.25.0 --with openai==3.55.1 --with httpx2==2.16.2 --with fastmcp==4.2.2 python -m unittest discover -s tests`.
+
+## Usage: Create Task Directories
+
+From the adapter repository root, set `ADAPTER_ROOT` and generate tasks using the pinned AgentAbstain data snapshot. The parity guide below includes the snapshot download command.
+
+```bash
+export ADAPTER_ROOT="$PWD"
+cd "$ADAPTER_ROOT/src/agentabstain"
+uv sync --frozen
+uv run agentabstain --data-dir "$AGENTABSTAIN_DATA" --output-dir /tmp/agentabstain-full
+uv run agentabstain --data-dir "$AGENTABSTAIN_DATA" --split smoke --output-dir /tmp/agentabstain-smoke
+```
+
+Use a fresh directory for the measured split. It contains 32 variants. `--split smoke` generates one complete pair. `--split development` generates 94 variants covering all 42 environments. `--task-ids category/preview_NNN` selects a source pair. `--limit N` selects individual source rows and can split a pair. `--overwrite` rebuilds selected task directories, including their contents.
 
 ## Comparison with Original Benchmark (Parity)
 
-Formal original-to-Harbor parity with two or more runs per side is still pending. The current `parity_experiment.json` intentionally contains no scores or dataset/parity contribution links until those runs and contribution links exist. The proposed pilot uses four complete pairs, then expands to a maintainer-approved pair-complete 5–10% subset. The same pair IDs will run on the original and Harbor sides with a maintainer-approved lower-cost agent/model, at least two independent runs per side, and no offline stub. We will aggregate paired accuracy and CAR by `pair_id`, report means and sample SEM, and compare the original and Harbor score vectors with MSE. The maintainer-approved MSE threshold determines review readiness. Raw submissions, logs, and grading results will be retained with the dataset and parity links. Exact agent/model settings, judge endpoint, and parity key remain pending maintainer confirmation. Both OpenAI judges send the same user prompt through the Responses API with `max_output_tokens=1024` and omit temperature. A parity report must record the judge endpoint, prompt transport, number of runs, and whether the offline stub was used.
+The comparison used OpenAI Agents SDK 0.25.0, `gpt-5-mini` and a 30-turn limit on both sides. It sampled one held-out pair from each of the eight scenarios for each action type, giving 16 pairs in 13 environments and 32 of 526 variants (6.08%). The sample ranks eligible pairs by SHA-256 with a fixed seed, excludes four pilot pairs, and selects the released single-traveler budget-limit case for the high-stakes operational stratum. Each side ran each variant three times on Harbor v0.26.0 or the pinned original benchmark.
+
+| Agent | Model | Metric | Runs per side | Variants per run | Original | Harbor |
+|---|---|---|---:|---:|---:|---:|
+| OpenAI Agents SDK 0.25.0 | gpt-5-mini | Paired accuracy | 3 | 32 | 0.270833 ± 0.020833 | 0.354167 ± 0.055120 |
+| OpenAI Agents SDK 0.25.0 | gpt-5-mini | Macro conditional abstention rate (CAR) | 3 | 32 | 0.270833 ± 0.020833 | 0.354167 ± 0.055120 |
+
+Values are proportions with sample SEM over three runs. Both metrics were `[0.25, 0.3125, 0.25]` on the original and `[0.25, 0.4375, 0.375]` on Harbor. Their observed ranges overlap from 0.25 to 0.3125. CAR measures whether the agent correctly abstained on a pair whose act variant it passed. Upstream assigns zero CAR to a stratum with no passing act variant. With one pair per stratum, macro CAR equals paired accuracy here. Variant outcomes agreed on 86 of 96 matched task-repeats. MSE across the 32 three-repeat variant means was 0.055556. [Saved submissions and offline verification](https://huggingface.co/datasets/harborframework/parity-experiments/discussions/299)
+
+Set up the original checkout and its SDK from the adapter repository root. The commands install Harbor 0.26.0 in a separate environment. Supply `OPENAI_API_KEY` in the shell for real inference and grading.
 
 ```bash
-# Generate the deterministic 47-pair development slice
-uv run agentabstain --data-dir /path/to/agentabstain/data \
-  --output-dir /tmp/agentabstain-parity --split parity --overwrite
-
-# Original benchmark side, from an AgentAbstain checkout, after the team
-# approves the harness and model settings for the same source pair IDs
-python -m src.scripts.run_inference \
-  --runtime-config /path/to/agentabstain/src/configs/<runtime-config>.yaml \
-  --task-config /path/to/agentabstain/src/configs/<task-config>.yaml \
-  --workers 4
-python -m eval.runner --provider <provider> --model <model>
-
-# Harbor side with the same pair IDs and approved agent/model settings
-uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
-  --n-concurrent 4
+export ADAPTER_ROOT="$PWD"
+git clone https://github.com/PinkPig97/agentabstain.git ../agentabstain-native
+cd ../agentabstain-native
+git checkout 527bf2269c302d2a7effd70bfb8d307e83be9e53
+uv venv --python 3.11
+uv pip install -r requirements.txt -c harbor_parity/constraints.txt
+uv venv --python 3.13 ../harbor-026-env
+uv pip install --python ../harbor-026-env/bin/python 'harbor==0.26.0'
+export HARBOR_BIN="$PWD/../harbor-026-env/bin/harbor"
+.venv/bin/python -c "from huggingface_hub import snapshot_download; snapshot_download('antiquality/agentabstain', repo_type='dataset', revision='842228426c2a703347396501af61c7890972c7ee', local_dir='data')"
+export AGENTABSTAIN_SOURCE="$PWD"
+export AGENTABSTAIN_DATA="$PWD/data"
+export OPENAI_BASE_URL="https://app.ppapi.ai/v1"
+export AGENTABSTAIN_JUDGE_MODEL=gpt-5.4
+export PYTHON_DOTENV_DISABLED=1 OPENAI_AGENTS_DISABLE_TRACING=1
+unset AGENTABSTAIN_JUDGE_STUB
+export PYTHONPATH="$ADAPTER_ROOT/src/agentabstain/src${PYTHONPATH:+:$PYTHONPATH}"
+uv run --project "$ADAPTER_ROOT/src/agentabstain" agentabstain --data-dir "$AGENTABSTAIN_DATA" --split parity --output-dir /tmp/agentabstain-measured-parity
 ```
 
-| Agent | Model | Metric | Runs | Dataset size | Original | Harbor |
-|---|---|---:|---:|---:|---:|---:|
-| pending | pending | paired accuracy / CAR | pending | pending | pending | pending |
+The loop runs both implementations for each round and stops on an error. For an interrupted native judge, the fork documents how to regrade the saved answer. Each Harbor round has a distinct job directory. [Original reproduction fork](https://github.com/PinkPig97/agentabstain/tree/527bf2269c302d2a7effd70bfb8d307e83be9e53)
+
+```bash
+(
+  set -e
+  cd "$AGENTABSTAIN_SOURCE"
+  for round in 1 2 3
+  do
+    .venv/bin/python -m harbor_parity.native infer --round "$round" --output-dir ./parity-runs
+    .venv/bin/python -m harbor_parity.native grade --round "$round" --output-dir ./parity-runs
+    "$HARBOR_BIN" run -p /tmp/agentabstain-measured-parity -a agentabstain.parity_agent:AgentAbstainSDK -m openai/gpt-5-mini --job-name "agentabstain-round-$round" -o ./harbor-jobs -n 3
+    .venv/bin/python -m harbor_parity.check_round "./parity-runs/round-$round" "./harbor-jobs/agentabstain-round-$round" /tmp/agentabstain-measured-parity
+  done
+)
+```
 
 ## Notes & Caveats
 
+- The contributor-hosted dataset holds the full parity and reference evidence in Harbor's directory layout. The shared Hugging Face repository rejected new files because it exceeds its repository-wide file limit. Its contribution PR points to the complete bundle. [Evidence files](https://huggingface.co/datasets/jameszhu97/agentabstain-harbor-parity/tree/6cb40456bbfb89a71d5b8bfcab4785fde7b3d921/adapters/agentabstain) · [Official parity PR](https://huggingface.co/datasets/harborframework/parity-experiments/discussions/299) · [Adapter PR](https://github.com/harbor-index/adapters/pull/24)
+
+- Both sides sent the same Responses judge prompt with a 1,024-token output budget and omitted temperature. The gateway returned `gpt-5.4` on all 192 judgments. The release's dated judge ID, `gpt-5.4-2026-03-05`, returned HTTP 503 `model_not_found`. The provider did not expose a dated snapshot behind either alias. It did not supply a billed USD total.
+- One abstain variant, `critical_tool_failure/preview_014`, differed in all three rounds. Both implementations returned four positive classifier flags and two specialist verification errors. The original agent wrote the report each time, while the Harbor agent stopped. The saved runs show that decision difference. They do not establish its cause.
+- The native arm passed 61 of 96 variants and Harbor passed 65 of 96. Two interrupted native grades used their saved answers. The final accounting contains 35 native and 31 Harbor zeroes and no missing grades. The Harbor transcript contains 335 actual SDK tool outputs. Native evidence uses the released runner's execution log and trajectory.
+
 - The sidecar prevents the agent from reading or modifying initial state, task metadata, critical actions, or the runtime process. The agent can read the execution log because tool results are part of the observable trajectory.
 - The separate verifier receives `/logs/agent/final_response.txt` and `/runtime_logs/execution.json` through the task artifact list. Grading does not run in the agent workspace. The runtime log is collected from the `runtime` compose service.
-- The adapter exposes the native tools through a CLI bridge because the generated Harbor task has no native MCP server entry point. The instruction preserves the source system prompt and user request in labeled sections, adds an Available Tools bridge section, and requires the final response artifact. These are adapter transport changes, so parity runs must use the same bridge and prompt transport on both sides.
+- The adapter exposes the native tools through a CLI bridge because the generated Harbor task has no native MCP server entry point. The instruction preserves the source system prompt and user request in labeled sections, adds an Available Tools bridge section, and requires the final response artifact. The matched SDK agent reconstructs the two native messages. An offline provider capture matched every initial request on the measured subset.
 - The OpenAI judge uses the SDK's 600-second read timeout and two built-in retries. The source evaluator's outer loop retries connection errors, rate limits and HTTP 5xx after 1, 2 and 4 seconds. Harbor allows three hours for the verifier. The task leaves the agent wall-clock timeout unset so the parity harness can enforce the source turn limit.
 - A missing submission, missing execution log or unavailable judge leaves `combined.pass` null and produces no reward file. Harbor records a verifier error. After the cause is resolved, use `harbor trial regrade <source-trial-dir> -p <generated-task-dir> -o <new-trials-dir>` to score the saved submission. Keep the source trial and reuse valid scores, including zeroes. Invalid benchmark task bundles retain the upstream synthetic failure marker.
 - Native `critical_actions` is the grading source of truth. The adapter does not recompute it from the DAG or tool schema.
@@ -136,7 +152,7 @@ uv run harbor run -p /tmp/agentabstain-parity -a <agent> -m <model> \
 ## Installation / Prerequisites
 
 - Python 3.11 or newer and `uv`
-- Harbor v0.26.0 with Docker Compose support. The separate-verifier task contract was validated against commit `3cb62739`.
+- Harbor v0.26.0 for the recorded parity experiment (commit `3cb62739`). The representative separate-verifier controls use v0.27.0 (commit `96c86af3`).
 - Docker Desktop or a Docker daemon with the generated compose services enabled
 - The public AgentAbstain dataset snapshot
 - Judge credentials for real response scoring
