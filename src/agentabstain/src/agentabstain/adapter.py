@@ -242,11 +242,9 @@ tags = {json.dumps(tags)}
 [metadata.harbor.lint]
 ignore = ["artifact-log-overlap"]
 
-[agent]
-timeout_sec = 1800.0
-
 [verifier]
-timeout_sec = 300.0
+# Allow the upstream judge's SDK timeouts and retries to finish.
+timeout_sec = 10800.0
 environment_mode = "separate"
 
 [verifier.env]
@@ -254,6 +252,7 @@ OPENAI_API_KEY = "${{OPENAI_API_KEY:-}}"
 OPENAI_BASE_URL = "${{OPENAI_BASE_URL:-}}"
 AGENTABSTAIN_JUDGE_MODEL = "${{AGENTABSTAIN_JUDGE_MODEL:-}}"
 AGENTABSTAIN_JUDGE_STUB = "${{AGENTABSTAIN_JUDGE_STUB:-}}"
+ALLOW_LEGACY_TASK_YAML = "${{ALLOW_LEGACY_TASK_YAML:-}}"
 
 [environment]
 build_timeout_sec = 900.0
@@ -420,28 +419,10 @@ volumes:
             json.dumps(metadata, indent=2), encoding="utf-8"
         )
         shutil.copy2(self.assets_dir / "verifier.py", staging / "tests" / "verifier.py")
-        test_sh = '''#!/bin/bash
-set -u
-rm -f /logs/verifier/reward.txt /logs/verifier/agentabstain_metrics.json
-python3 /tests/verifier.py
-status=$?
-if [ ! -f /logs/verifier/reward.txt ]; then
-  echo 0 > /logs/verifier/reward.txt
-fi
-exit "$status"
-'''
-        (staging / "tests" / "test.sh").write_text(test_sh, encoding="utf-8")
+        template = Path(__file__).with_name("task-template") / "tests"
+        for name in ("test.sh", "Dockerfile"):
+            shutil.copy2(template / name, staging / "tests" / name)
         (staging / "tests" / "test.sh").chmod(0o755)
-        verifier_dockerfile = '''FROM python:3.11-slim
-
-WORKDIR /app
-RUN pip install --no-cache-dir pyyaml==6.0.3
-RUN mkdir -p /logs/agent /logs/verifier /runtime_logs
-COPY . /tests/
-'''
-        (staging / "tests" / "Dockerfile").write_text(
-            verifier_dockerfile, encoding="utf-8"
-        )
 
     def _write_solution(self, staging: Path, task: SourceTask) -> None:
         source_task = dict(task.task_yaml)

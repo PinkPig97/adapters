@@ -12,9 +12,6 @@ agents:
   # - name: codex
   #   model_name: <approved-model>
 
-verifier:
-  timeout_sec: 300.0
-
 environment:
   type: docker
   force_build: false

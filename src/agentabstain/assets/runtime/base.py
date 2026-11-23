@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import json
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -160,6 +161,17 @@ class BaseEnvironment(ABC):
             raise ToolError(str(exc)) from exc
         if hasattr(result, "structured_content"):
             structured = result.structured_content
+            if structured is None:
+                # FastMCP sends a bare list as one JSON text block and an empty list as no blocks.
+                if not result.content:
+                    return []
+                if len(result.content) == 1 and result.content[0].type == "text":
+                    text = result.content[0].text
+                    try:
+                        return json.loads(text)
+                    except json.JSONDecodeError:
+                        return text
+                return result.content
             if isinstance(structured, dict) and set(structured) == {"result"}:
                 return structured["result"]
             return structured

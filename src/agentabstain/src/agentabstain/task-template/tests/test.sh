@@ -1,3 +1,4 @@
 #!/bin/bash
 set -euo pipefail
-echo 0 > /logs/verifier/reward.txt
+rm -f /logs/verifier/reward.txt /logs/verifier/reward.json /logs/verifier/agentabstain_metrics.json
+exec python3 /tests/verifier.py
